@@ -41,7 +41,7 @@ notice how in the example the create-schema and create-schema-private have swapp
 
 ## editors
 
-### neovim
+### neovim
 copy `./editors/neovim/migrate-move.lua` to your `$XDG_CONFIG_HOME/nvim/` directory.
 
 before using the plugin, you will have to set it up:
