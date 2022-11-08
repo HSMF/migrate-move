@@ -11,9 +11,12 @@ pub struct Migration {
     pub id: usize,
 }
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum ParseError {
+    #[error("filename doesn't match")]
     NotMatching,
+
+    #[error("id is overflowing")]
     IdOverflowing,
 }
 
