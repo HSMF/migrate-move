@@ -11,10 +11,13 @@ pub struct Pattern<'a> {
     pub(crate) order: Order,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(thiserror::Error, Debug, PartialEq, Eq)]
 pub enum ParseError {
+    #[error("invalid pattern")]
     InvalidPattern,
+    #[error("unfinished substitute")]
     UnfinishedSubstitute,
+    #[error("too many placeholders")]
     TooManyPlaceholders,
 }
 
@@ -63,7 +66,6 @@ impl<'a> Pattern<'a> {
 
         Ok(Pattern { parts, order })
     }
-
 }
 
 #[cfg(test)]
