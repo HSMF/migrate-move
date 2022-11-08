@@ -1,5 +1,6 @@
-use std::{error::Error, fmt::Display, path::PathBuf};
+use std::path::PathBuf;
 
+use anyhow::Context;
 use clap::{Parser, Subcommand};
 use migrate_move::{pattern::Pattern, Entries};
 
@@ -52,31 +53,21 @@ enum Commands {
 #[derive(Debug)]
 struct InputError(&'static str);
 
-impl Display for InputError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Error for InputError {}
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     let pattern_up = args
         .pattern_up
         .unwrap_or_else(|| "%d_%s.up.sql".to_string());
 
-    let pattern_up = Pattern::parse(&pattern_up).map_err(|_| InputError("invalid up pattern"))?;
+    let pattern_up = Pattern::parse(&pattern_up).context("bad up pattern")?;
 
     let pattern_down = args
         .pattern_down
         .unwrap_or_else(|| "%d_%s.down.sql".to_string());
-    let pattern_down =
-        Pattern::parse(&pattern_down).map_err(|_| InputError("invalid down pattern"))?;
+    let pattern_down = Pattern::parse(&pattern_down).context("bad down pattern")?;
 
-    let entries = Entries::from_dir(&args.path, pattern_up.clone(), pattern_down.clone())
-        .expect("could not read directory");
+    let entries = Entries::from_dir(&args.path, pattern_up.clone(), pattern_down.clone())?;
 
     match args.command {
         Commands::List { only_up } => {
@@ -99,18 +90,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut entries = entries;
             let by = by.unwrap_or(1);
             for i in 0..by {
-                entries.move_up(index - i).expect("out of bounds");
+                entries.move_up(index - i).with_context(|| {
+                    format!("would move to invalid index. moving {index} up by {by}")
+                })?;
             }
-            entries.write_back().expect("could not write back");
+            entries.write_back().context("could not write back")?;
         }
 
         Commands::Down { index, by } => {
             let mut entries = entries;
             let by = by.unwrap_or(1);
             for i in 0..by {
-                entries.move_down(index + i).expect("out of bounds");
+                entries.move_down(index + i).with_context(|| {
+                    format!("would move to invalid index. moving {index} down by {by}")
+                })?;
             }
-            entries.write_back().expect("could not write back");
+            entries.write_back().context("could not write back")?;
         }
     }
 
