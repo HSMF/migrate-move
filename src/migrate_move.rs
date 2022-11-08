@@ -34,12 +34,18 @@ enum Commands {
     Up {
         /// the index of the migration to move
         index: usize,
+        #[clap(short, long)]
+        /// by how much to move
+        by: Option<usize>,
     },
 
     /// move the specified migration down by one, i.e. to be run later
     Down {
         /// the index of the migration to move
         index: usize,
+        #[clap(short, long)]
+        /// by how much to move
+        by: Option<usize>,
     },
 }
 
@@ -89,15 +95,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        Commands::Up { index } => {
+        Commands::Up { index, by } => {
             let mut entries = entries;
-            entries.move_up(index);
+            let by = by.unwrap_or(1);
+            for i in 0..by {
+                entries.move_up(index - i).expect("out of bounds");
+            }
             entries.write_back().expect("could not write back");
         }
 
-        Commands::Down { index } => {
+        Commands::Down { index, by } => {
             let mut entries = entries;
-            entries.move_down(index);
+            let by = by.unwrap_or(1);
+            for i in 0..by {
+                entries.move_down(index + i).expect("out of bounds");
+            }
             entries.write_back().expect("could not write back");
         }
     }
